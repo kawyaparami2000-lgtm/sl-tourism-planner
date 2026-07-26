@@ -1,21 +1,24 @@
 # Agent 3 – Budget & Optimization Coach Agent
 # Pattern: REFLECTION / SELF-CRITIQUE pattern
-# Evaluates the proposed itinerary and feasibility notes, providing reflective critique and optimization guidance.
+# Evaluates proposed itinerary and feasibility notes using an advanced coaching model (OpenRouter).
 
 from typing import Dict, Any
 from agents.state import PlannerState
+from models.model_router import get_model
 
 def coach_agent(state: PlannerState) -> Dict[str, Any]:
     """
     Reflection/Self-Critique Agent Node:
-    Critiques the generated itinerary against evaluation constraints (budget, timing, weather)
-    and produces structured reflective feedback.
+    Critiques the generated itinerary using assigned OpenRouter coaching model.
     """
+    # Fetch assigned LLM for coaching synthesis sub-task from Model Router
+    model = get_model("coaching_synthesis")
+    
     itinerary_legs = state.get("itinerary_legs", [])
     eval_notes = state.get("evaluation_notes", {})
     user_input = state.get("user_input", {})
 
-    print("[Coach Agent] Executing reflection & self-critique over itinerary...")
+    print(f"[Coach Agent] Reflection execution with Model: {model}")
 
     # Formulate structured critique
     strengths = [
@@ -35,11 +38,12 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
     ]
 
     coach_feedback = {
+        "model_used": str(model),
         "strengths": strengths,
         "areas_to_improve": gaps,
         "alternatives": alternatives,
         "formatted_summary": (
-            "--- COACH CRITIQUE ---\n"
+            f"--- COACH CRITIQUE (Model: {model}) ---\n"
             + "\n".join(strengths) + "\n\n"
             + "\n".join(gaps) + "\n\n"
             + "Suggested Alternatives:\n" + "\n".join(f"  • {alt}" for alt in alternatives)

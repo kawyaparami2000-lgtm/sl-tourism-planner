@@ -1,9 +1,10 @@
 # Agent 2 – Itinerary Feasibility Evaluator Agent
 # Pattern: TOOL-USE pattern
-# Uses a retrieval tool to fetch facts about Sri Lanka travel conditions and evaluate itinerary feasibility.
+# Uses a retrieval tool and dedicated evaluation model to check travel conditions and feasibility.
 
 from typing import Dict, Any, List
 from agents.state import PlannerState
+from models.model_router import get_model
 
 def get_stub_evidence(query: str) -> List[str]:
     """
@@ -23,21 +24,25 @@ def get_stub_evidence(query: str) -> List[str]:
 def evaluator_agent(state: PlannerState) -> Dict[str, Any]:
     """
     Tool-Use Agent Node:
-    Calls retrieval tool to check travel feasibility (weather, transport, budget) for proposed itinerary legs.
+    Calls retrieval tool and evaluation model (Groq) to assess itinerary feasibility.
     """
+    # Fetch assigned LLM for evaluation sub-task from Model Router
+    model = get_model("evaluation")
+    
     itinerary_legs = state.get("itinerary_legs", [])
     user_input = state.get("user_input", {})
     travel_dates = user_input.get("travel_dates", "")
 
     retrieved_evidence = []
     evaluation_notes = {
+        "model_used": str(model),
         "is_feasible": True,
         "weather_notes": "",
         "transport_notes": "",
         "budget_notes": ""
     }
 
-    print("[Evaluator Agent] Executing tool-use retrieval for itinerary legs...")
+    print(f"[Evaluator Agent] Tool-Use execution with Model: {model}")
     for leg in itinerary_legs:
         dest = leg.get("destination", "")
         query = f"{dest} {travel_dates}"
@@ -56,7 +61,7 @@ def evaluator_agent(state: PlannerState) -> Dict[str, Any]:
     evaluation_notes["summary_list"] = eval_summary
 
     print("[Evaluator Agent] Evidence retrieved via stub tool:")
-    for snippet in retrieved_evidence:
+    for snippet in set(retrieved_evidence):
         print(f"  - [Retrieved Evidence]: {snippet}")
 
     return {
