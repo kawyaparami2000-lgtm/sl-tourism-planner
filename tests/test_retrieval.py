@@ -1,1 +1,1 @@
-# placeholder: comment "Sanity tests for RAG pipeline"
+# Sanity tests for RAG pipeline
