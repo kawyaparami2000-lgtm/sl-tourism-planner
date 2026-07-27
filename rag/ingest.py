@@ -3,7 +3,11 @@
 import os
 from typing import List
 from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 def load_and_chunk_documents(data_dir: str = "data") -> List[Document]:
     """
