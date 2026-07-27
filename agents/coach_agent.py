@@ -20,16 +20,16 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
 
     print(f"[Coach Agent] Reflection execution with Model: {model}")
 
-    # Formulate structured critique
+    # Formulate structured critique (using standard bullet prefixes for console safety)
     strengths = [
-        "✓ Excellent balance of cultural heritage and coastal relaxation tailored for a 7-day duration.",
-        "✓ Cultural Triangle (Sigiriya/Kandy) dry season timing in August optimizes outdoor exploration.",
-        f"✓ Leg allocations align well with the {user_input.get('budget', 'mid-range')} budget parameters."
+        "[+] Excellent balance of cultural heritage and coastal relaxation tailored for a 7-day duration.",
+        "[+] Cultural Triangle (Sigiriya/Kandy) dry season timing in August optimizes outdoor exploration.",
+        f"[+] Leg allocations align well with the {user_input.get('budget', 'mid-range')} budget parameters."
     ]
 
     gaps = [
-        "✗ Southern coast leg in August carries minor risk of monsoon rain showers.",
-        "✗ 4.5-hour road transit between Kandy and Galle utilizes almost half a travel day."
+        "[-] Southern coast leg in August carries minor risk of monsoon rain showers.",
+        "[-] 4.5-hour road transit between Kandy and Galle utilizes almost half a travel day."
     ]
 
     alternatives = [
@@ -46,7 +46,7 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
             f"--- COACH CRITIQUE (Model: {model}) ---\n"
             + "\n".join(strengths) + "\n\n"
             + "\n".join(gaps) + "\n\n"
-            + "Suggested Alternatives:\n" + "\n".join(f"  • {alt}" for alt in alternatives)
+            + "Suggested Alternatives:\n" + "\n".join(f"  * {alt}" for alt in alternatives)
         )
     }
 
