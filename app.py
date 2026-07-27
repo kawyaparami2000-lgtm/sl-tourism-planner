@@ -4,6 +4,7 @@ import sys
 import traceback
 import streamlit as st
 from agents.graph import run_trip_planner
+from models.model_router import _get_api_key
 
 # -----------------------------------------------------------------------------
 # 1. Page Configuration & Header
@@ -19,7 +20,26 @@ st.title("🇱🇰 Sri Lanka Tourism Planner")
 st.caption("An AI-powered multi-agent travel application that creates personalized itineraries, evaluates travel feasibility via RAG, and optimizes your trip budget.")
 
 # -----------------------------------------------------------------------------
-# 2. Input Preferences Form
+# 2. Startup API Key Preflight Check
+# -----------------------------------------------------------------------------
+groq_key = _get_api_key("GROQ_API_KEY")
+openrouter_key = _get_api_key("OPENROUTER_API_KEY")
+
+missing_keys = []
+if not groq_key or groq_key == "your_groq_api_key_here":
+    missing_keys.append("GROQ_API_KEY")
+if not openrouter_key or openrouter_key == "your_openrouter_api_key_here":
+    missing_keys.append("OPENROUTER_API_KEY")
+
+if missing_keys:
+    st.error(
+        f"🔑 **API Key Configuration Notice**: The following required environment/secret key(s) are missing: **{', '.join(missing_keys)}**.\n\n"
+        "• **Local Environment**: Add them to your `.env` file.\n"
+        "• **Streamlit Cloud**: Add them under **App Settings -> Secrets**."
+    )
+
+# -----------------------------------------------------------------------------
+# 3. Input Preferences Form
 # -----------------------------------------------------------------------------
 st.sidebar.header("🎯 Trip Preferences")
 
@@ -56,7 +76,7 @@ with st.sidebar.form(key="trip_form"):
     submit_button = st.form_submit_button(label="Plan My Trip", use_container_width=True)
 
 # -----------------------------------------------------------------------------
-# 3. Form Submission & Graph Execution
+# 4. Form Submission & Graph Execution
 # -----------------------------------------------------------------------------
 if submit_button:
     if not travel_dates_str.strip():
@@ -82,12 +102,12 @@ if submit_button:
             st.session_state["last_payload"] = user_input_payload
             st.success("Travel plan generated successfully!")
     except Exception as e:
-        st.error("Failed to generate travel plan. Please check your system configuration or try again.")
+        st.error("Failed to generate travel plan. Please check your network connection or API keys.")
         print(f"[App Execution Error]: {e}", file=sys.stderr)
         traceback.print_exc()
 
 # -----------------------------------------------------------------------------
-# 4. Displaying Results
+# 5. Displaying Results
 # -----------------------------------------------------------------------------
 result_state = st.session_state.get("trip_plan_result")
 
@@ -171,7 +191,7 @@ if result_state:
             st.info(alt)
 
 # -----------------------------------------------------------------------------
-# 5. How This Works Section
+# 6. How This Works Section
 # -----------------------------------------------------------------------------
 st.markdown("---")
 with st.expander("ℹ️ How this works"):

@@ -6,18 +6,25 @@ load_dotenv()
 
 def _get_api_key(key_name: str) -> str:
     """
-    Retrieves API key trying environment variables first (populated via python-dotenv),
-    and falling back to streamlit.secrets if running on Streamlit Cloud.
+    Retrieves API key following strict precedence order:
+    1. st.secrets first (if running on Streamlit Cloud)
+    2. os.environ / python-dotenv locally as fallback
     """
-    key_val = os.getenv(key_name, "").strip()
-    if key_val:
-        return key_val
+    # 1. Check Streamlit Secrets precedence
     try:
         import streamlit as st
         if hasattr(st, "secrets") and key_name in st.secrets:
-            return str(st.secrets[key_name]).strip()
+            sec_val = str(st.secrets[key_name]).strip()
+            if sec_val:
+                return sec_val
     except Exception:
         pass
+
+    # 2. Fall back to os.environ / python-dotenv
+    env_val = os.getenv(key_name, "").strip()
+    if env_val:
+        return env_val
+
     return ""
 
 def get_model(task_name: str):
