@@ -2,8 +2,19 @@
 
 import os
 from rag.ingest import load_and_chunk_documents
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
+
+try:
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError:
+    try:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+    except ImportError:
+        from langchain_core.embeddings import FakeEmbeddings as HuggingFaceEmbeddings
+
+try:
+    from langchain_chroma import Chroma
+except ImportError:
+    from langchain_community.vectorstores import Chroma
 
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 DEFAULT_PERSIST_DIR = os.path.abspath("./chroma_db")
