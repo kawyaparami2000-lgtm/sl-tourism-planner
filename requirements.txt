@@ -3,6 +3,8 @@ langgraph
 langchain
 langchain-groq
 langchain-openai
+langchain-huggingface
+langchain-chroma
 chromadb
 python-dotenv
 sentence-transformers
