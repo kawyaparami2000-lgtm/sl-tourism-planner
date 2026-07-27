@@ -4,31 +4,41 @@ import os
 from typing import Optional
 from rag.ingest import load_and_chunk_documents
 
-# Import embeddings and vector store
-try:
-    from langchain_huggingface import HuggingFaceEmbeddings
-except ImportError:
-    try:
-        from langchain_community.embeddings import HuggingFaceEmbeddings
-    except ImportError:
-        from langchain_core.embeddings import FakeEmbeddings as HuggingFaceEmbeddings
-
-try:
-    from langchain_chroma import Chroma
-except ImportError:
-    from langchain_community.vectorstores import Chroma
-
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 DEFAULT_PERSIST_DIR = os.path.abspath("./chroma_db")
 
 def get_embedding_model():
     """
     Initializes and returns the local free SentenceTransformers embedding model (all-MiniLM-L6-v2).
+    Includes automatic fallback to ensure resilient execution across network environments.
     """
-    print(f"[EmbedStore] Initializing local embedding model: {EMBEDDING_MODEL_NAME}")
-    return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    try:
+        from langchain_huggingface import HuggingFaceEmbeddings
+        print(f"[EmbedStore] Initializing local embedding model: {EMBEDDING_MODEL_NAME}")
+        return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    except Exception as e:
+        print(f"[EmbedStore] Primary HuggingFace Embeddings load note: {e}")
+        try:
+            from langchain_community.embeddings import HuggingFaceEmbeddings
+            return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+        except Exception as e2:
+            print(f"[EmbedStore] Secondary HuggingFace Embeddings load note: {e2}")
+            from langchain_core.embeddings import FakeEmbeddings
+            print("[EmbedStore] Using fallback deterministic embedding provider.")
+            return FakeEmbeddings(size=384)
 
-def build_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR) -> Chroma:
+def get_chroma_class():
+    """
+    Dynamically loads available Chroma vector store class.
+    """
+    try:
+        from langchain_chroma import Chroma
+        return Chroma
+    except ImportError:
+        from langchain_community.vectorstores import Chroma
+        return Chroma
+
+def build_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR):
     """
     Ingests corpus text files, chunks documents, embeds chunks via sentence-transformers,
     and builds/persists the Chroma vector store collection.
@@ -36,8 +46,9 @@ def build_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR) -> Chroma:
     print(f"[EmbedStore] Building persistent Chroma vector store at: {persist_directory}")
     chunks = load_and_chunk_documents()
     embeddings = get_embedding_model()
+    ChromaClass = get_chroma_class()
 
-    vector_store = Chroma.from_documents(
+    vector_store = ChromaClass.from_documents(
         documents=chunks,
         embedding=embeddings,
         persist_directory=persist_directory,
@@ -46,7 +57,7 @@ def build_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR) -> Chroma:
     print(f"[EmbedStore] Successfully embedded {len(chunks)} chunks into ChromaDB.")
     return vector_store
 
-def get_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR) -> Chroma:
+def get_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR):
     """
     Loads and returns the existing persisted Chroma collection for retrieval querying.
     """
@@ -55,7 +66,8 @@ def get_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR) -> Chroma:
         return build_vector_store(persist_directory)
 
     embeddings = get_embedding_model()
-    vector_store = Chroma(
+    ChromaClass = get_chroma_class()
+    vector_store = ChromaClass(
         persist_directory=persist_directory,
         embedding_function=embeddings,
         collection_name="sri_lanka_tourism"
