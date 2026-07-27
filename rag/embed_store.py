@@ -52,10 +52,14 @@ def build_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR):
 
 def get_vector_store(persist_directory: str = DEFAULT_PERSIST_DIR):
     """
-    Loads and returns the existing persisted Chroma collection for retrieval querying.
+    Loads and returns the persisted Chroma collection.
+    Self-healing: If the chroma_db folder is missing or empty, automatically builds it from data/.
     """
-    if not os.path.exists(persist_directory):
-        print("[EmbedStore] Vector store directory not found. Triggering fresh build...")
+    is_missing_or_empty = not os.path.exists(persist_directory) or len(os.listdir(persist_directory)) == 0
+
+    if is_missing_or_empty:
+        print(f"[EmbedStore] First-time run detected: Vector store directory '{persist_directory}' is missing or empty.")
+        print("[EmbedStore] Automatically executing build_vector_store() from data/ corpus for self-healing deployment...")
         return build_vector_store(persist_directory)
 
     embeddings = get_embedding_model()
