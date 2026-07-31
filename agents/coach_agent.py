@@ -1,6 +1,6 @@
 # Agent 3 – Budget & Optimization Coach Agent
 # Pattern: REFLECTION / SELF-CRITIQUE pattern
-# Evaluates proposed itinerary and feasibility notes using an advanced coaching model (OpenRouter).
+# Evaluates proposed itinerary and feasibility notes using an advanced coaching model (OpenRouter with Groq fallback).
 
 import json
 import re
@@ -17,10 +17,15 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
     model = get_model("coaching_synthesis")
     
     if isinstance(model, str) or not hasattr(model, "invoke"):
-        raise RuntimeError(
-            f"Coach Agent failed: LLM is not properly configured. Router returned: '{model}'. "
-            "Please ensure OPENROUTER_API_KEY is set in environment or secrets."
-        )
+        # Fallback to evaluation model if coaching synthesis model is unavailable string
+        eval_model = get_model("evaluation")
+        if hasattr(eval_model, "invoke"):
+            model = eval_model
+        else:
+            raise RuntimeError(
+                f"Coach Agent failed: LLM is not properly configured. Router returned: '{model}'. "
+                "Please ensure GROQ_API_KEY or OPENROUTER_API_KEY is set in environment or secrets."
+            )
 
     itinerary_legs = state.get("itinerary_legs", [])
     eval_notes = state.get("evaluation_notes", {})
@@ -63,7 +68,21 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
         ])
         raw_text = response.content.strip()
     except Exception as e:
-        raise RuntimeError(f"Coach Agent LLM invocation failed: {str(e)}") from e
+        # Fallback to evaluation LLM (Groq) if primary OpenRouter model fails (e.g., account out of credits)
+        fallback_model = get_model("evaluation")
+        if fallback_model and hasattr(fallback_model, "invoke") and fallback_model != model:
+            print(f"[Coach Agent] Primary OpenRouter model failed ({e}). Falling back to Groq LLM...")
+            try:
+                response = fallback_model.invoke([
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ])
+                raw_text = response.content.strip()
+                model = fallback_model
+            except Exception as inner_e:
+                raise RuntimeError(f"Coach Agent LLM invocation failed: {str(e)}") from e
+        else:
+            raise RuntimeError(f"Coach Agent LLM invocation failed: {str(e)}") from e
 
     parsed_json = _parse_json_response(raw_text)
 
