@@ -37,11 +37,11 @@ def get_model(task_name: str):
     groq_api_key = _get_api_key("GROQ_API_KEY")
     openrouter_api_key = _get_api_key("OPENROUTER_API_KEY")
 
-    if task_name == "evaluation":
+    if task_name in ["planning", "evaluation"]:
         if groq_api_key and groq_api_key != "your_groq_api_key_here":
             try:
                 from langchain_groq import ChatGroq
-                print("[Model Router] Selected model for 'evaluation': Groq (llama-3.1-8b-instant)")
+                print(f"[Model Router] Selected model for '{task_name}': Groq (llama-3.1-8b-instant)")
                 return ChatGroq(
                     model_name="llama-3.1-8b-instant",
                     groq_api_key=groq_api_key,
@@ -49,7 +49,7 @@ def get_model(task_name: str):
                 )
             except Exception as e:
                 print(f"[Model Router] Groq initialization note: {e}")
-        print("[Model Router] Configured model for 'evaluation': Groq (llama-3.1-8b-instant)")
+        print(f"[Model Router] Configured model for '{task_name}': Groq (llama-3.1-8b-instant)")
         return "Groq: llama-3.1-8b-instant"
 
     elif task_name == "coaching_synthesis":
