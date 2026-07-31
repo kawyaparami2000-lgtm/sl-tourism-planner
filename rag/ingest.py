@@ -6,12 +6,16 @@ from langchain_core.documents import Document
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-def load_and_chunk_documents(data_dir: str = "data") -> List[Document]:
+def load_and_chunk_documents(data_dir: str = None) -> List[Document]:
     """
     Recursively scans the data/ directory for text files, loads their contents,
     splits them into chunks, and attaches metadata (category and source_file).
     """
     documents: List[Document] = []
+    if data_dir is None:
+        # Resolve path relative to this file's location, not the current working directory
+        this_file_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(this_file_dir, "..", "data")
     
     # Text splitter configured for ~300-500 characters with ~50 character overlap
     text_splitter = RecursiveCharacterTextSplitter(
