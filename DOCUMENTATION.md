@@ -184,7 +184,7 @@ python -c "from agents.graph import run_trip_planner; print(run_trip_planner({'t
 3. Click **New App**, select your repo, set **Branch** to `main`, and **Main file path** to `app.py`.
 4. Under **App Settings -> Secrets**, paste:
    ```toml
-   GROQ_API_KEY = "gsk_your_groq_api_key_here"
-   OPENROUTER_API_KEY = "sk-or-v1-your_openrouter_api_key_here"
+   GROQ_API_KEY = "your_groq_api_key_here"
+   OPENROUTER_API_KEY = "your_openrouter_api_key_here"
    ```
 5. Click **Deploy!**. The vector store will automatically build itself on first run.

@@ -27,21 +27,24 @@ def _get_api_key(key_name: str) -> str:
 
     return ""
 
-def get_model(task_name: str):
+def get_model(task_name: str, fallback: bool = False):
     """
-    Central Model Router:
-    Selects and initializes the appropriate LLM for a given sub-task:
-    - 'evaluation': Fast Groq model (llama-3.1-8b-instant)
-    - 'coaching_synthesis': Stronger OpenRouter model (openai/gpt-4o-mini via OpenRouter)
+    Central Model Router with automatic Fallback:
+    - Primary for 'planning' & 'evaluation': Groq (llama-3.1-8b-instant). Fallback: OpenRouter.
+    - Primary for 'coaching_synthesis': OpenRouter (openai/gpt-4o-mini). Fallback: Groq.
+    If fallback=True, swaps primary and secondary model attempts.
     """
     groq_api_key = _get_api_key("GROQ_API_KEY")
     openrouter_api_key = _get_api_key("OPENROUTER_API_KEY")
 
-    if task_name in ["planning", "evaluation"]:
-        if groq_api_key and groq_api_key != "your_groq_api_key_here":
+    groq_valid = bool(groq_api_key and groq_api_key != "your_groq_api_key_here")
+    openrouter_valid = bool(openrouter_api_key and openrouter_api_key != "your_openrouter_api_key_here")
+
+    def _init_groq():
+        if groq_valid:
             try:
                 from langchain_groq import ChatGroq
-                print(f"[Model Router] Selected model for '{task_name}': Groq (llama-3.1-8b-instant)")
+                print(f"[Model Router] Initializing Groq (llama-3.1-8b-instant) for '{task_name}'")
                 return ChatGroq(
                     model_name="llama-3.1-8b-instant",
                     groq_api_key=groq_api_key,
@@ -49,14 +52,13 @@ def get_model(task_name: str):
                 )
             except Exception as e:
                 print(f"[Model Router] Groq initialization note: {e}")
-        print(f"[Model Router] Configured model for '{task_name}': Groq (llama-3.1-8b-instant)")
-        return "Groq: llama-3.1-8b-instant"
+        return None
 
-    elif task_name == "coaching_synthesis":
-        if openrouter_api_key and openrouter_api_key != "your_openrouter_api_key_here":
+    def _init_openrouter():
+        if openrouter_valid:
             try:
                 from langchain_openai import ChatOpenAI
-                print("[Model Router] Selected model for 'coaching_synthesis': OpenRouter (openai/gpt-4o-mini)")
+                print(f"[Model Router] Initializing OpenRouter (openai/gpt-4o-mini) for '{task_name}'")
                 return ChatOpenAI(
                     model_name="openai/gpt-4o-mini",
                     openai_api_key=openrouter_api_key,
@@ -65,8 +67,25 @@ def get_model(task_name: str):
                 )
             except Exception as e:
                 print(f"[Model Router] OpenRouter initialization note: {e}")
-        print("[Model Router] Configured model for 'coaching_synthesis': OpenRouter (openai/gpt-4o-mini)")
-        return "OpenRouter: openai/gpt-4o-mini"
+        return None
 
+    if task_name in ["planning", "evaluation"]:
+        primary_fn = _init_openrouter if fallback else _init_groq
+        secondary_fn = _init_groq if fallback else _init_openrouter
+    elif task_name == "coaching_synthesis":
+        primary_fn = _init_groq if fallback else _init_openrouter
+        secondary_fn = _init_openrouter if fallback else _init_groq
     else:
         raise ValueError(f"Unknown task_name: '{task_name}'")
+
+    model = primary_fn()
+    if model is not None:
+        return model
+
+    model = secondary_fn()
+    if model is not None:
+        print(f"[Model Router] Secondary fallback model selected for '{task_name}'")
+        return model
+
+    return f"No valid API key available for '{task_name}'. Please configure GROQ_API_KEY or OPENROUTER_API_KEY."
+

@@ -80,7 +80,20 @@ def evaluator_agent(state: PlannerState) -> Dict[str, Any]:
         ])
         raw_text = response.content.strip()
     except Exception as e:
-        raise RuntimeError(f"Evaluator Agent LLM invocation failed: {str(e)}") from e
+        print(f"[Evaluator Agent] Primary LLM call failed ({e}). Attempting fallback model...")
+        fallback_model = get_model("evaluation", fallback=True)
+        if fallback_model and hasattr(fallback_model, "invoke") and fallback_model != model:
+            try:
+                response = fallback_model.invoke([
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ])
+                raw_text = response.content.strip()
+                model = fallback_model
+            except Exception as inner_e:
+                raise RuntimeError(f"Evaluator Agent LLM invocation failed: {str(e)}") from e
+        else:
+            raise RuntimeError(f"Evaluator Agent LLM invocation failed: {str(e)}") from e
 
     parsed_json = _parse_json_response(raw_text)
 
@@ -101,9 +114,8 @@ def evaluator_agent(state: PlannerState) -> Dict[str, Any]:
 def _parse_json_response(text: str) -> Dict[str, Any]:
     """Helper to extract JSON object from LLM response text."""
     clean_text = text.strip()
-    if clean_text.startswith("```"):
-        clean_text = re.sub(r"^```(?:json)?\s*", "", clean_text, flags=re.IGNORECASE)
-        clean_text = re.sub(r"\s*```$", "", clean_text)
+    clean_text = re.sub(r"^```(?:json)?\s*", "", clean_text, flags=re.IGNORECASE)
+    clean_text = re.sub(r"\s*```$", "", clean_text).strip()
     
     try:
         return json.loads(clean_text)
@@ -115,3 +127,4 @@ def _parse_json_response(text: str) -> Dict[str, Any]:
             except json.JSONDecodeError:
                 pass
         raise ValueError(f"Evaluator Agent failed to parse valid JSON from LLM response:\n{text}")
+

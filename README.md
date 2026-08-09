@@ -39,8 +39,8 @@ pip install -r requirements.txt
 ### 2. Configure API Keys
 Create a `.env` file in the root directory:
 ```env
-GROQ_API_KEY=gsk_your_groq_api_key_here
-OPENROUTER_API_KEY=sk-or-v1-your_openrouter_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
 
 ### 3. Run the Streamlit Application

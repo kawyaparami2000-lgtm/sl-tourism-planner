@@ -16,6 +16,10 @@ def load_and_chunk_documents(data_dir: str = None) -> List[Document]:
         # Resolve path relative to this file's location, not the current working directory
         this_file_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(this_file_dir, "..", "data")
+    elif not os.path.isabs(data_dir):
+        # Resolve relative data_dir relative to this file's location, not cwd
+        this_file_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(this_file_dir, "..", data_dir)
     
     # Text splitter configured for ~300-500 characters with ~50 character overlap
     text_splitter = RecursiveCharacterTextSplitter(

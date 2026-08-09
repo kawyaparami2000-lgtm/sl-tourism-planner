@@ -68,10 +68,10 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
         ])
         raw_text = response.content.strip()
     except Exception as e:
-        # Fallback to evaluation LLM (Groq) if primary OpenRouter model fails (e.g., account out of credits)
-        fallback_model = get_model("evaluation")
+        # Fallback to secondary model if primary model fails
+        fallback_model = get_model("coaching_synthesis", fallback=True)
         if fallback_model and hasattr(fallback_model, "invoke") and fallback_model != model:
-            print(f"[Coach Agent] Primary OpenRouter model failed ({e}). Falling back to Groq LLM...")
+            print(f"[Coach Agent] Primary model failed ({e}). Attempting fallback model...")
             try:
                 response = fallback_model.invoke([
                     {"role": "system", "content": system_prompt},
@@ -116,9 +116,8 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
 def _parse_json_response(text: str) -> Dict[str, Any]:
     """Helper to extract JSON object from LLM response text."""
     clean_text = text.strip()
-    if clean_text.startswith("```"):
-        clean_text = re.sub(r"^```(?:json)?\s*", "", clean_text, flags=re.IGNORECASE)
-        clean_text = re.sub(r"\s*```$", "", clean_text)
+    clean_text = re.sub(r"^```(?:json)?\s*", "", clean_text, flags=re.IGNORECASE)
+    clean_text = re.sub(r"\s*```$", "", clean_text).strip()
     
     try:
         return json.loads(clean_text)
@@ -130,3 +129,4 @@ def _parse_json_response(text: str) -> Dict[str, Any]:
             except json.JSONDecodeError:
                 pass
         raise ValueError(f"Coach Agent failed to parse valid JSON from LLM response:\n{text}")
+

@@ -31,11 +31,15 @@ if not groq_key or groq_key == "your_groq_api_key_here":
 if not openrouter_key or openrouter_key == "your_openrouter_api_key_here":
     missing_keys.append("OPENROUTER_API_KEY")
 
-if missing_keys:
+if len(missing_keys) == 2:
     st.error(
-        f"🔑 **API Key Configuration Notice**: The following required environment/secret key(s) are missing: **{', '.join(missing_keys)}**.\n\n"
-        "• **Local Environment**: Add them to your `.env` file.\n"
-        "• **Streamlit Cloud**: Add them under **App Settings -> Secrets**."
+        "🔑 **API Key Configuration Notice**: Neither **GROQ_API_KEY** nor **OPENROUTER_API_KEY** is configured.\n\n"
+        "• **Local Environment**: Add at least one key to your `.env` file.\n"
+        "• **Streamlit Cloud**: Add keys under **App Settings -> Secrets**."
+    )
+elif len(missing_keys) == 1:
+    st.info(
+        f"💡 **API Key Notice**: `{missing_keys[0]}` is missing. The application will automatically use the active fallback provider."
     )
 
 # -----------------------------------------------------------------------------
@@ -102,9 +106,12 @@ if submit_button:
             st.session_state["last_payload"] = user_input_payload
             st.success("Travel plan generated successfully!")
     except Exception as e:
-        st.error("Failed to generate travel plan. Please check your network connection or API keys.")
+        st.error(f"⚠️ **Failed to generate travel plan**: {e}")
+        with st.expander("🛠️ Show Detailed Error Traceback"):
+            st.code(traceback.format_exc(), language="python")
         print(f"[App Execution Error]: {e}", file=sys.stderr)
         traceback.print_exc()
+
 
 # -----------------------------------------------------------------------------
 # 5. Displaying Results
