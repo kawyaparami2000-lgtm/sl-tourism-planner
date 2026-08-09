@@ -152,8 +152,8 @@ sl-tourism-planner/
 ### 1. Configure `.env`
 Create a `.env` file in the project root folder:
 ```env
-GROQ_API_KEY=gsk_your_groq_api_key_here
-OPENROUTER_API_KEY=sk-or-v1-your_openrouter_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
 
 ### 2. Launch Streamlit Web UI
