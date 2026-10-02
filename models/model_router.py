@@ -12,6 +12,7 @@ def _get_api_key(key_name: str) -> str:
     """
     # 1. Check Streamlit Secrets precedence
     try:
+        # pyrefly: ignore [missing-import]
         import streamlit as st
         if hasattr(st, "secrets") and key_name in st.secrets:
             sec_val = str(st.secrets[key_name]).strip()
@@ -43,10 +44,11 @@ def get_model(task_name: str, fallback: bool = False):
     def _init_groq():
         if groq_valid:
             try:
+                # pyrefly: ignore [missing-import]
                 from langchain_groq import ChatGroq
-                print(f"[Model Router] Initializing Groq (llama-3.1-8b-instant) for '{task_name}'")
+                print(f"[Model Router] Initializing Groq (openai/gpt-oss-20b) for '{task_name}'")
                 return ChatGroq(
-                    model_name="llama-3.1-8b-instant",
+                    model_name="openai/gpt-oss-20b",
                     groq_api_key=groq_api_key,
                     temperature=0.2
                 )
@@ -57,6 +59,7 @@ def get_model(task_name: str, fallback: bool = False):
     def _init_openrouter():
         if openrouter_valid:
             try:
+                # pyrefly: ignore [missing-import]
                 from langchain_openai import ChatOpenAI
                 print(f"[Model Router] Initializing OpenRouter (openai/gpt-4o-mini) for '{task_name}'")
                 return ChatOpenAI(

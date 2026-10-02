@@ -23,9 +23,21 @@ def create_planner_graph():
     builder.add_edge(START, "planner")
 
     # Wire conditional edges driven by router
-    builder.add_conditional_edges("planner", route_next_agent, {"evaluator": "evaluator", "planner": "planner"})
-    builder.add_conditional_edges("evaluator", route_next_agent, {"coach": "coach", "planner": "planner"})
-    builder.add_conditional_edges("coach", route_next_agent, {"__end__": END})
+    builder.add_conditional_edges(
+        "planner",
+        route_next_agent,
+        {"evaluator": "evaluator", "planner": "planner", "coach": "coach", "__end__": END}
+    )
+    builder.add_conditional_edges(
+        "evaluator",
+        route_next_agent,
+        {"coach": "coach", "planner": "planner", "evaluator": "evaluator", "__end__": END}
+    )
+    builder.add_conditional_edges(
+        "coach",
+        route_next_agent,
+        {"__end__": END, "planner": "planner", "evaluator": "evaluator", "coach": "coach"}
+    )
 
     return builder.compile()
 

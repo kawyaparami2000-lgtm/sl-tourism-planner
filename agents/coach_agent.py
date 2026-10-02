@@ -66,7 +66,8 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ])
-        raw_text = response.content.strip()
+        raw_text = response.content if isinstance(response.content, str) else str(response.content)
+        raw_text = raw_text.strip()
     except Exception as e:
         # Fallback to secondary model if primary model fails
         fallback_model = get_model("coaching_synthesis", fallback=True)
@@ -77,7 +78,8 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ])
-                raw_text = response.content.strip()
+                raw_text = response.content if isinstance(response.content, str) else str(response.content)
+                raw_text = raw_text.strip()
                 model = fallback_model
             except Exception as inner_e:
                 raise RuntimeError(f"Coach Agent LLM invocation failed: {str(e)}") from e
@@ -90,15 +92,17 @@ def coach_agent(state: PlannerState) -> Dict[str, Any]:
     gaps = parsed_json.get("areas_to_improve", [])
     alternatives = parsed_json.get("alternatives", [])
 
+    model_name_str = getattr(model, "model_name", getattr(model, "model", str(model)))
+
     formatted_summary = (
-        f"--- COACH CRITIQUE (Model: {model}) ---\n"
+        f"--- COACH CRITIQUE (Model: {model_name_str}) ---\n"
         + "\n".join(strengths) + "\n\n"
         + "\n".join(gaps) + "\n\n"
         + "Suggested Alternatives:\n" + "\n".join(f"  * {alt}" for alt in alternatives)
     )
 
     coach_feedback = {
-        "model_used": str(model),
+        "model_used": model_name_str,
         "strengths": strengths,
         "areas_to_improve": gaps,
         "alternatives": alternatives,

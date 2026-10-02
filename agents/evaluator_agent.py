@@ -78,7 +78,8 @@ def evaluator_agent(state: PlannerState) -> Dict[str, Any]:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ])
-        raw_text = response.content.strip()
+        raw_text = response.content if isinstance(response.content, str) else str(response.content)
+        raw_text = raw_text.strip()
     except Exception as e:
         print(f"[Evaluator Agent] Primary LLM call failed ({e}). Attempting fallback model...")
         fallback_model = get_model("evaluation", fallback=True)
@@ -88,7 +89,8 @@ def evaluator_agent(state: PlannerState) -> Dict[str, Any]:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ])
-                raw_text = response.content.strip()
+                raw_text = response.content if isinstance(response.content, str) else str(response.content)
+                raw_text = raw_text.strip()
                 model = fallback_model
             except Exception as inner_e:
                 raise RuntimeError(f"Evaluator Agent LLM invocation failed: {str(e)}") from e
@@ -98,7 +100,8 @@ def evaluator_agent(state: PlannerState) -> Dict[str, Any]:
     parsed_json = _parse_json_response(raw_text)
 
     # Attach model_used
-    parsed_json["model_used"] = str(model)
+    model_name_str = getattr(model, "model_name", getattr(model, "model", str(model)))
+    parsed_json["model_used"] = model_name_str
 
     print("[Evaluator Agent] Evidence retrieved via RAG Vector Store:")
     for snippet in unique_evidence:
